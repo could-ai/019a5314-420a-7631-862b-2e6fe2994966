@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: pulsex_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./backend/docker/mongo-init:/docker-entrypoint-initdb.d
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: pulsex_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile
+    container_name: pulsex_backend
+    restart: unless-stopped
+    environment:
+      - DEBUG=True
+      - DJANGO_SETTINGS_MODULE=pulsex.settings
+      - MONGODB_URL=mongodb://admin:password@mongodb:27017/pulsex?authSource=admin
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-secret-key-here
+      - GOOGLE_CLIENT_ID=your-google-client-id
+      - FCM_SERVER_KEY=your-fcm-server-key
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - ./backend:/app
+    command: python manage.py runserver 0.0.0.0:8000
+
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pulsex_frontend_dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/pubspec.lock
+    working_dir: /app
+    command: flutter run --web-port=3000 --web-hostname=0.0.0.0
+
+volumes:
+  mongodb_data:

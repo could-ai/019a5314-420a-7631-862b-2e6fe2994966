@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: PulseX API
+  version: 1.0.0
+  description: Social News Aggregator API
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Development server
+
+paths:
+  /auth/google/:
+    post:
+      summary: Authenticate with Google OAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_token:
+                  type: string
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+                  refresh:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  /news/:
+    get:
+      summary: Get news feed
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: tab
+          in: query
+          schema:
+            type: string
+            enum: [for_you, following]
+      responses:
+        '200':
+          description: News feed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/News'
+                  page:
+                    type: integer
+                  total:
+                    type: integer
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+
+    News:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        excerpt:
+          type: string
+        content:
+          type: string
+        url:
+          type: string
+        image_url:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+        source:
+          $ref: '#/components/schemas/Source'
+        view_count:
+          type: integer
+        like_count:
+          type: integer
+        comments_count:
+          type: integer
+        is_liked:
+          type: boolean
+        is_bookmarked:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+
+    Source:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+        is_verified:
+          type: boolean
+        category:
+          type: string
